@@ -42,6 +42,7 @@ const adminRoutes = require('./routes/admin');
 const studentRoutes = require('./routes/student');
 const teacherRoutes = require('./routes/teacher');
 const holidayRoutes = require('./routes/holiday');
+const leaveRoutes = require('./routes/leave');
 
 // Use routes
 app.use('/api/auth', authRoutes);
@@ -51,6 +52,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/student', studentRoutes);
 app.use('/api/teacher', teacherRoutes);
 app.use('/api/holidays', holidayRoutes);
+app.use('/api/leaves', leaveRoutes);
 
 // Basic route
 app.get('/', (req, res) => {
