@@ -1,13 +1,12 @@
 import React, { useState } from 'react';
 import { Box, Button, TextField, Typography, Container, Alert } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
-import { login } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
 
 const Login = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const navigate = useNavigate();
+  const { login } = useAuth();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -19,36 +18,14 @@ const Login = () => {
     }
 
     try {
-      console.log('Attempting login with:', { username });
-      const data = await login(username, password);
+      const result = await login(username, password);
       
-      if (!data || !data.token || !data.user) {
-        console.error('Invalid response from server:', data);
-        setError('Server returned invalid data');
-        return;
-      }
-
-      console.log('Login successful:', data.user.role);
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
-      
-      // Redirect based on role
-      switch (data.user.role) {
-        case 'admin':
-          navigate('/admin/dashboard');
-          break;
-        case 'teacher':
-          navigate('/teacher/dashboard');
-          break;
-        case 'student':
-          navigate('/student/dashboard');
-          break;
-        default:
-          setError('Invalid user role');
+      if (!result.success) {
+        setError(result.error || 'Login failed. Please check your credentials.');
       }
     } catch (error) {
-      console.error('Login error:', error.response?.data?.message || error.message);
-      setError(error.response?.data?.message || 'Login failed. Please check your credentials.');
+      console.error('Login error:', error);
+      setError('An unexpected error occurred. Please try again.');
     }
   };
 

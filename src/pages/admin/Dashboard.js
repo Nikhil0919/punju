@@ -51,6 +51,27 @@ const AdminDashboard = () => {
         <Grid item xs={12} md={4}>
           <Paper
             component={Link}
+            to="/admin/holidays"
+            sx={{
+              p: 3,
+              display: 'flex',
+              flexDirection: 'column',
+              textDecoration: 'none',
+              color: 'inherit',
+              '&:hover': {
+                backgroundColor: 'action.hover',
+              },
+            }}
+          >
+            <Typography variant="h6">Academic Calendar</Typography>
+            <Typography variant="body2" color="text.secondary">
+              Manage holidays and important academic dates
+            </Typography>
+          </Paper>
+        </Grid>
+        <Grid item xs={12} md={4}>
+          <Paper
+            component={Link}
             to="/admin/timetable"
             sx={{
               p: 3,
