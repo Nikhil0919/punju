@@ -53,11 +53,23 @@ router.get('/users/:role', adminAuth, async (req, res) => {
 // Get available teachers for a section
 router.get('/sections/:sectionId/available-teachers', adminAuth, async (req, res) => {
     try {
-        const teachers = await User.find({ role: 'teacher' })
-            .select('fullName username email');
+        // Get the section to check its current teachers
+        const section = await Section.findById(req.params.sectionId)
+            .populate('teachers', '_id');
+
+        if (!section) {
+            return res.status(404).json({ message: 'Section not found' });
+        }
+
+        // Get all teachers except those already in the section
+        const currentTeacherIds = section.teachers.map(t => t._id);
+        const teachers = await User.find({ 
+            role: 'teacher',
+            _id: { $nin: currentTeacherIds }
+        }).select('fullName username email');
         
         res.json({
-            availableTeachers: teachers
+            availableTeachers: teachers || []
         });
     } catch (error) {
         res.status(500).json({ message: 'Error fetching teachers', error: error.message });
@@ -75,7 +87,7 @@ router.post('/sections/:sectionId/teachers', adminAuth, async (req, res) => {
             return res.status(404).json({ message: 'Section not found' });
         }
 
-        // Verify all teachers exist
+        // Verify teachers exist
         const teachers = await User.find({ 
             _id: { $in: teacherIds },
             role: 'teacher'
@@ -85,8 +97,22 @@ router.post('/sections/:sectionId/teachers', adminAuth, async (req, res) => {
             return res.status(400).json({ message: 'One or more teacher IDs are invalid' });
         }
 
-        // Update section's teachers
-        section.teachers = [...new Set([...section.teachers, ...teacherIds])];
+        // Check for duplicate assignments
+        const alreadyAssigned = teacherIds.filter(id => 
+            section.teachers.some(t => t.toString() === id.toString())
+        );
+
+        if (alreadyAssigned.length > 0) {
+            const assignedTeachers = await User.find({ _id: { $in: alreadyAssigned } })
+                .select('fullName username');
+            const teacherNames = assignedTeachers.map(t => t.fullName || t.username).join(', ');
+            return res.status(400).json({ 
+                message: `Teacher(s) already assigned to this section: ${teacherNames}`
+            });
+        }
+
+        // Add new teachers to the section
+        section.teachers = [...section.teachers, ...teacherIds];
         await section.save();
 
         // Return updated section with populated teacher data
@@ -240,7 +266,7 @@ router.get('/sections', adminAuth, async (req, res) => {
     try {
         const sections = await Section.find()
             .populate('students', 'fullName username email')
-            .populate('teachers', 'fullName username');
+            .populate('teachers', 'fullName username email');
         res.json(sections);
     } catch (error) {
         res.status(500).json({ message: 'Error fetching sections', error: error.message });
