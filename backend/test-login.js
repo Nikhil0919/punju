@@ -3,7 +3,7 @@ const axios = require('axios');
 const testLogin = async (username, password) => {
     try {
         console.log(`\nTesting login for user: ${username}`);
-        const response = await axios.post('http://localhost:5000/api/auth/login', {
+        const response = await axios.post('http://localhost:5001/api/auth/login', {
             username,
             password
         });

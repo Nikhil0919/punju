@@ -18,8 +18,7 @@ const app = express();
 
 // Middleware
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://localhost:3001'],
-  credentials: true,
+  origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
@@ -42,6 +41,7 @@ const assignmentRoutes = require('./routes/assignment');
 const adminRoutes = require('./routes/admin');
 const studentRoutes = require('./routes/student');
 const teacherRoutes = require('./routes/teacher');
+const holidayRoutes = require('./routes/holiday');
 
 // Use routes
 app.use('/api/auth', authRoutes);
@@ -50,6 +50,7 @@ app.use('/api/assignment', assignmentRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/student', studentRoutes);
 app.use('/api/teacher', teacherRoutes);
+app.use('/api/holidays', holidayRoutes);
 
 // Basic route
 app.get('/', (req, res) => {
@@ -62,7 +63,7 @@ app.use((err, req, res, next) => {
   res.status(500).send('Something broke!');
 });
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
