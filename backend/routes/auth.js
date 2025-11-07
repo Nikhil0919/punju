@@ -7,6 +7,8 @@ const { authenticateToken } = require('../middleware/auth');
 router.post('/login', async (req, res) => {
   try {
     console.log('Login attempt received:', req.body);
+    console.log('Headers:', req.headers);
+    
     const { username, password } = req.body;
 
     // Validate input

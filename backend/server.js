@@ -17,7 +17,12 @@ console.log('Environment variables loaded successfully');
 const app = express();
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: ['http://localhost:3000', 'http://localhost:3001'],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(express.json());
 
 // MongoDB connection
@@ -35,12 +40,16 @@ const authRoutes = require('./routes/auth');
 const timetableRoutes = require('./routes/timetable');
 const assignmentRoutes = require('./routes/assignment');
 const adminRoutes = require('./routes/admin');
+const studentRoutes = require('./routes/student');
+const teacherRoutes = require('./routes/teacher');
 
 // Use routes
 app.use('/api/auth', authRoutes);
 app.use('/api/timetable', timetableRoutes);
 app.use('/api/assignment', assignmentRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/student', studentRoutes);
+app.use('/api/teacher', teacherRoutes);
 
 // Basic route
 app.get('/', (req, res) => {
