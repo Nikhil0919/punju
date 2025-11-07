@@ -21,6 +21,13 @@ const Login = () => {
     try {
       console.log('Attempting login with:', { username });
       const data = await login(username, password);
+      
+      if (!data || !data.token || !data.user) {
+        console.error('Invalid response from server:', data);
+        setError('Server returned invalid data');
+        return;
+      }
+
       console.log('Login successful:', data.user.role);
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
@@ -40,7 +47,8 @@ const Login = () => {
           setError('Invalid user role');
       }
     } catch (error) {
-      setError('Invalid credentials');
+      console.error('Login error:', error.response?.data?.message || error.message);
+      setError(error.response?.data?.message || 'Login failed. Please check your credentials.');
     }
   };
 

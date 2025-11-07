@@ -15,7 +15,8 @@ import {
   ListItemText,
   ListItemSecondaryAction,
   IconButton,
-  Checkbox
+  Checkbox,
+  Divider
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
@@ -47,13 +48,17 @@ const SectionManagement = () => {
   const [availableTeachers, setAvailableTeachers] = useState([]);
   const [selectedTeachers, setSelectedTeachers] = useState([]);
   const [addTeachersDialogOpen, setAddTeachersDialogOpen] = useState(false);
-  const [removeTeachersDialogOpen, setRemoveTeachersDialogOpen] = useState(false);
 
   // Fetch sections and available students
   const fetchSections = async () => {
     try {
       const data = await getSections();
-      setSections(data);
+      // Ensure each section has teachers array initialized
+      const sectionsWithTeachers = data.map(section => ({
+        ...section,
+        teachers: section.teachers || []
+      }));
+      setSections(sectionsWithTeachers);
     } catch (error) {
       console.error('Error fetching sections:', error);
     }
@@ -81,6 +86,25 @@ const SectionManagement = () => {
     } catch (error) {
       console.error('Error fetching available students:', error);
       setAvailableStudents([]);
+    }
+  }, [selectedSection?._id]);
+
+  // Fetch available teachers for a section
+  const fetchAvailableTeachers = useCallback(async () => {
+    if (!selectedSection?._id) return;
+
+    try {
+      const response = await getAvailableTeachers(selectedSection._id);
+      const teachers = response.availableTeachers || [];
+      setAvailableTeachers(teachers);
+      setSelectedTeachers(prev => 
+        prev.filter(selectedId =>
+          teachers.some(teacher => teacher._id === selectedId)
+        )
+      );
+    } catch (error) {
+      console.error('Error fetching available teachers:', error);
+      setAvailableTeachers([]);
     }
   }, [selectedSection?._id]);
 
@@ -155,6 +179,62 @@ const SectionManagement = () => {
       fetchSections();
     } catch (error) {
       console.error('Error creating section:', error);
+    }
+  };
+
+  // Handle adding teachers to section
+  const handleAddTeachers = async () => {
+    if (!selectedTeachers.length) {
+      alert('Please select teachers');
+      return;
+    }
+
+    if (!selectedSection?._id) {
+      alert('No section selected');
+      return;
+    }
+
+    // Convert any teacher objects to IDs
+    const teacherIds = selectedTeachers.map(teacher => 
+      typeof teacher === 'string' ? teacher : teacher._id
+    );
+
+    try {
+      await assignTeachersToSection(selectedSection._id, teacherIds);
+      setAddTeachersDialogOpen(false);
+      setSelectedTeachers([]);
+      fetchSections();
+      fetchAvailableTeachers();
+    } catch (error) {
+      console.error('Error assigning teachers:', error);
+      alert('Failed to assign teachers');
+    }
+  };
+
+  // Handle removing teachers from section
+  const handleRemoveTeacher = async (teacherId) => {
+    if (!selectedSection?._id) {
+      alert('No section selected');
+      return;
+    }
+
+    try {
+      const { section: updatedSection } = await removeTeacherFromSection(selectedSection._id, teacherId);
+      
+      // Update the selected section with the returned data
+      setSelectedSection(updatedSection);
+      
+      // Refresh available teachers list
+      const teacherResponse = await getAvailableTeachers(selectedSection._id);
+      if (teacherResponse?.availableTeachers) {
+        setAvailableTeachers(teacherResponse.availableTeachers);
+      }
+      
+      // Refresh all sections
+      fetchSections();
+    } catch (error) {
+      console.error('Error removing teacher:', error);
+      alert('Failed to remove teacher: ' + (error.response?.data?.message || error.message));
     }
   };
 
@@ -273,12 +353,22 @@ const SectionManagement = () => {
     });
   };
 
+  const handleTeacherToggle = (teacherId) => {
+    setSelectedTeachers(prev => {
+      if (prev.includes(teacherId)) {
+        return prev.filter(id => id !== teacherId);
+      } else {
+        return [...prev, teacherId];
+      }
+    });
+  };
+
   // Load section data when remove dialog opens
   useEffect(() => {
-    if (removeStudentsDialogOpen && selectedSection?._id) {
+    if ((removeStudentsDialogOpen || addTeachersDialogOpen) && selectedSection?._id) {
       const fetchSectionData = async () => {
         try {
-          // Get fresh section data with students
+          // Get fresh section data with students and teachers
           const sections = await getSections();
           const currentSection = sections.find(s => s._id === selectedSection._id);
           
@@ -287,22 +377,32 @@ const SectionManagement = () => {
             const response = await getSectionStudents(selectedSection._id);
             const sectionStudents = response.sectionStudents || [];
             
+            // Get detailed teacher data
+            const teacherResponse = await getAvailableTeachers(selectedSection._id);
+            const availableTeachers = teacherResponse?.availableTeachers || [];
+            
             setSelectedSection(prev => ({
               ...currentSection,
-              students: sectionStudents
+              students: sectionStudents,
+              teachers: currentSection.teachers || [] // Ensure teachers is always an array
             }));
+            
+            // Update available teachers state
+            setAvailableTeachers(availableTeachers);
+            
+            // Reset selections when dialog opens
+            setSelectedStudents([]);
+            setSelectedTeachers([]);
           }
-          
-          // Reset selections when dialog opens
-          setSelectedStudents([]);
         } catch (error) {
           console.error('Error fetching section data:', error);
+          setAvailableTeachers([]);
         }
       };
       
       fetchSectionData();
     }
-  }, [removeStudentsDialogOpen, selectedSection?._id]);
+  }, [removeStudentsDialogOpen, addTeachersDialogOpen, selectedSection?._id]);
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
@@ -320,9 +420,17 @@ const SectionManagement = () => {
         <List>
           {sections.map((section) => (
             <ListItem key={section._id}>
-              <ListItemText 
+                <ListItemText 
                 primary={section.name}
-                secondary={`Grade ${section.gradeLevel} - ${section.academicYear}`}
+                secondary={
+                  <React.Fragment>
+                    <Typography component="span">Grade {section.gradeLevel} - {section.academicYear}</Typography>
+                    <br />
+                    <Typography component="span" color="textSecondary">
+                      Teachers: {section.teachers?.length || 0} | Students: {section.students?.length || 0}
+                    </Typography>
+                  </React.Fragment>
+                }
               />
               <ListItemSecondaryAction>
                 <IconButton 
@@ -346,6 +454,21 @@ const SectionManagement = () => {
                   style={{ marginRight: 8 }}
                 >
                   <PersonAddIcon style={{ transform: 'rotate(45deg)' }} />
+                </IconButton>
+                <IconButton 
+                  edge="end" 
+                  aria-label="add teachers"
+                  onClick={() => {
+                    setSelectedSection({
+                      ...section,
+                      teachers: section.teachers || []
+                    });
+                    fetchAvailableTeachers();
+                    setAddTeachersDialogOpen(true);
+                  }}
+                  style={{ marginRight: 8 }}
+                >
+                  <PersonAddIcon color="secondary" />
                 </IconButton>
                 <IconButton 
                   edge="end" 
@@ -517,6 +640,90 @@ const SectionManagement = () => {
             disabled={selectedStudents.length === 0}
           >
             Remove Selected Students ({selectedStudents.length})
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Add Teachers Dialog */}
+      <Dialog 
+        open={addTeachersDialogOpen} 
+        onClose={() => setAddTeachersDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Assign Teachers to {selectedSection?.name}</DialogTitle>
+        <DialogContent>
+          <Typography variant="subtitle2" sx={{ mb: 2 }}>
+            Current Teachers:
+          </Typography>
+          <List>
+            {(selectedSection?.teachers || []).map((teacher) => (
+              <ListItem 
+                key={teacher._id}
+                dense
+                secondaryAction={
+                  <IconButton
+                    edge="end"
+                    aria-label="remove teacher"
+                    onClick={() => handleRemoveTeacher(teacher._id)}
+                  >
+                    <DeleteIcon />
+                  </IconButton>
+                }
+              >
+                <ListItemText
+                  primary={teacher.fullName || teacher.username}
+                  secondary={teacher.email}
+                />
+              </ListItem>
+            ))}
+            {(!selectedSection?.teachers || selectedSection.teachers.length === 0) && (
+              <ListItem>
+                <ListItemText primary="No teachers assigned" />
+              </ListItem>
+            )}
+          </List>
+          <Divider sx={{ my: 2 }} />
+          <Typography variant="subtitle2" sx={{ mb: 2 }}>
+            Available Teachers:
+          </Typography>
+          <List>
+            {availableTeachers.map((teacher) => (
+              <ListItem 
+                key={teacher._id}
+                dense
+                button
+                onClick={() => handleTeacherToggle(teacher._id)}
+              >
+                <Checkbox
+                  edge="start"
+                  checked={selectedTeachers.includes(teacher._id)}
+                  tabIndex={-1}
+                  disableRipple
+                  sx={{ marginRight: 2 }}
+                />
+                <ListItemText
+                  primary={teacher.fullName || teacher.username}
+                  secondary={teacher.email}
+                />
+              </ListItem>
+            ))}
+            {availableTeachers.length === 0 && (
+              <ListItem>
+                <ListItemText primary="No teachers available to add" />
+              </ListItem>
+            )}
+          </List>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setAddTeachersDialogOpen(false)}>Cancel</Button>
+          <Button 
+            onClick={handleAddTeachers}
+            variant="contained" 
+            color="primary"
+            disabled={selectedTeachers.length === 0}
+          >
+            Add Selected Teachers ({selectedTeachers.length})
           </Button>
         </DialogActions>
       </Dialog>

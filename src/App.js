@@ -4,6 +4,7 @@ import Login from './pages/Login';
 import AdminDashboard from './pages/admin/Dashboard';
 import UserManagement from './pages/admin/UserManagement';
 import SectionManagement from './pages/admin/SectionManagement';
+import TimetableManagement from './pages/admin/TimetableManagement';
 
 // Protected Route component
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -45,6 +46,15 @@ function App() {
           element={
             <ProtectedRoute allowedRoles={['admin']}>
               <SectionManagement />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/admin/timetable"
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <TimetableManagement />
             </ProtectedRoute>
           }
         />
