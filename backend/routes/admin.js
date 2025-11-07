@@ -50,6 +50,85 @@ router.get('/users/:role', adminAuth, async (req, res) => {
     }
 });
 
+// Get available teachers for a section
+router.get('/sections/:sectionId/available-teachers', adminAuth, async (req, res) => {
+    try {
+        const teachers = await User.find({ role: 'teacher' })
+            .select('fullName username email');
+        
+        res.json({
+            availableTeachers: teachers
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Error fetching teachers', error: error.message });
+    }
+});
+
+// Assign teachers to section
+router.post('/sections/:sectionId/teachers', adminAuth, async (req, res) => {
+    try {
+        const { sectionId } = req.params;
+        const { teacherIds } = req.body;
+
+        const section = await Section.findById(sectionId);
+        if (!section) {
+            return res.status(404).json({ message: 'Section not found' });
+        }
+
+        // Verify all teachers exist
+        const teachers = await User.find({ 
+            _id: { $in: teacherIds },
+            role: 'teacher'
+        });
+
+        if (teachers.length !== teacherIds.length) {
+            return res.status(400).json({ message: 'One or more teacher IDs are invalid' });
+        }
+
+        // Update section's teachers
+        section.teachers = [...new Set([...section.teachers, ...teacherIds])];
+        await section.save();
+
+        // Return updated section with populated teacher data
+        const updatedSection = await Section.findById(sectionId)
+            .populate('teachers', 'fullName username email');
+
+        res.json({ message: 'Teachers assigned successfully', section: updatedSection });
+    } catch (error) {
+        res.status(500).json({ message: 'Error assigning teachers', error: error.message });
+    }
+});
+
+// Remove teacher from section
+router.delete('/sections/:sectionId/teachers/:teacherId', adminAuth, async (req, res) => {
+    try {
+        const { sectionId, teacherId } = req.params;
+        
+        const section = await Section.findById(sectionId);
+        if (!section) {
+            return res.status(404).json({ message: 'Section not found' });
+        }
+
+        // Check if teacher exists
+        const teacher = await User.findById(teacherId);
+        if (!teacher) {
+            return res.status(404).json({ message: 'Teacher not found' });
+        }
+
+        // Remove teacher from section
+        section.teachers = section.teachers.filter(id => id.toString() !== teacherId);
+        await section.save();
+
+        // Return updated section with populated teacher data
+        const updatedSection = await Section.findById(sectionId)
+            .populate('teachers', 'fullName username email');
+
+        res.json({ message: 'Teacher removed successfully', section: updatedSection });
+    } catch (error) {
+        res.status(500).json({ message: 'Error removing teacher', error: error.message });
+    }
+});
+
 // Create new section
 router.post('/sections', adminAuth, async (req, res) => {
     try {
@@ -78,10 +157,42 @@ router.post('/sections/:sectionId/students', adminAuth, async (req, res) => {
             return res.status(404).json({ message: 'Section not found' });
         }
 
-        section.students = studentIds;
+        // Verify all students exist and aren't already in the section
+        const students = await User.find({ 
+            _id: { $in: studentIds },
+            role: 'student'
+        });
+
+        if (students.length !== studentIds.length) {
+            return res.status(400).json({ message: 'One or more student IDs are invalid' });
+        }
+
+        // Initialize students array if it doesn't exist
+        if (!section.students) {
+            section.students = [];
+        }
+
+        // Filter out students that are already in the section
+        const newStudentIds = studentIds.filter(id => 
+            !section.students.some(existingId => existingId.toString() === id.toString())
+        );
+
+        if (newStudentIds.length === 0) {
+            return res.status(400).json({ message: 'All selected students are already in this section' });
+        }
+
+        // Add the new students to the section
+        section.students = [...section.students, ...newStudentIds];
         await section.save();
 
-        res.json({ message: 'Students assigned successfully' });
+        // Return updated section with populated student data
+        const updatedSection = await Section.findById(sectionId)
+            .populate('students', 'username fullName email');
+
+        res.json({
+            message: 'Students assigned successfully',
+            section: updatedSection
+        });
     } catch (error) {
         res.status(500).json({ message: 'Error assigning students', error: error.message });
     }
@@ -124,11 +235,11 @@ router.post('/timetable', adminAuth, async (req, res) => {
     }
 });
 
-// Get all sections
+// Get all sections with populated data
 router.get('/sections', adminAuth, async (req, res) => {
     try {
         const sections = await Section.find()
-            .populate('students', 'fullName username')
+            .populate('students', 'fullName username email')
             .populate('teachers', 'fullName username');
         res.json(sections);
     } catch (error) {
@@ -136,7 +247,41 @@ router.get('/sections', adminAuth, async (req, res) => {
     }
 });
 
-// Delete user
+  // Get students in a section
+router.get('/sections/:sectionId/students', adminAuth, async (req, res) => {
+    try {
+        const section = await Section.findById(req.params.sectionId)
+            .populate('students', 'fullName username email');
+        
+        if (!section) {
+            return res.status(404).json({ message: 'Section not found' });
+        }
+        
+        // Get all sections to identify assigned students
+        const allSections = await Section.find();
+        const assignedStudentIds = new Set(
+            allSections.flatMap(sect => 
+                sect.students.map(id => id.toString())
+            )
+        );
+        
+        // Get all students who are either unassigned or in the current section
+        const availableStudents = await User.find({
+            $or: [
+                { _id: { $nin: Array.from(assignedStudentIds) } },
+                { _id: { $in: section.students } }
+            ],
+            role: 'student'
+        }).select('fullName username email');
+        
+        res.json({
+            sectionStudents: section.students || [],
+            availableStudents: availableStudents
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Error fetching section students', error: error.message });
+    }
+});// Delete user
 router.delete('/users/:userId', adminAuth, async (req, res) => {
     try {
         const { userId } = req.params;
@@ -144,6 +289,45 @@ router.delete('/users/:userId', adminAuth, async (req, res) => {
         res.json({ message: 'User deleted successfully' });
     } catch (error) {
         res.status(500).json({ message: 'Error deleting user', error: error.message });
+    }
+});
+
+// Remove student from section
+router.delete('/sections/:sectionId/students/:studentId', adminAuth, async (req, res) => {
+    try {
+        const { sectionId, studentId } = req.params;
+        
+        // Find the section
+        const section = await Section.findById(sectionId);
+        if (!section) {
+            return res.status(404).json({ message: 'Section not found' });
+        }
+
+        // Check if student exists
+        const student = await User.findById(studentId);
+        if (!student) {
+            return res.status(404).json({ message: 'Student not found' });
+        }
+
+        // Check if student is actually in the section
+        if (!section.students.some(id => id.toString() === studentId)) {
+            return res.status(400).json({ message: 'Student is not in this section' });
+        }
+
+        // Remove student from section
+        section.students = section.students.filter(id => id.toString() !== studentId);
+        await section.save();
+
+        // Return updated section with populated student data
+        const updatedSection = await Section.findById(sectionId)
+            .populate('students', 'username fullName email');
+
+        res.json({
+            message: 'Student removed successfully',
+            section: updatedSection
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Error removing student', error: error.message });
     }
 });
 

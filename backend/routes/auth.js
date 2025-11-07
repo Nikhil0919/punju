@@ -6,22 +6,36 @@ const { authenticateToken } = require('../middleware/auth');
 // Login route
 router.post('/login', async (req, res) => {
   try {
-    console.log('Login attempt:', req.body.username);
+    console.log('Login attempt received:', req.body);
     const { username, password } = req.body;
 
-    // Find user
-    const user = await User.findOne({ username });
-    console.log('User found:', user ? 'yes' : 'no');
+    // Validate input
+    if (!username || !password) {
+      return res.status(400).json({ message: 'Username and password are required' });
+    }
+
+    // Find user - case insensitive username search
+    const user = await User.findOne({
+      username: { $regex: new RegExp(`^${username}$`, 'i') }
+    });
+    
+    console.log('Login attempt details:', {
+      attemptedUsername: username,
+      userFound: user ? 'yes' : 'no',
+      userRole: user?.role,
+      userId: user?._id
+    });
     
     if (!user) {
       console.log('User not found');
-      return res.status(401).json({ message: 'Invalid credentials' });
+      return res.status(401).json({ message: 'Invalid username or password' });
     }
 
     // Check password
     console.log('Checking password...');
     const isMatch = await user.comparePassword(password);
     console.log('Password match:', isMatch ? 'yes' : 'no');
+    console.log('Attempted password:', password);
     
     if (!isMatch) {
       console.log('Password does not match');

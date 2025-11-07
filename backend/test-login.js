@@ -1,22 +1,33 @@
-const testLogin = async () => {
+const axios = require('axios');
+
+const testLogin = async (username, password) => {
     try {
-        console.log('Testing admin login...');
-        const response = await fetch('http://localhost:5000/api/auth/login', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                username: 'admin',
-                password: 'admin123'
-            })
+        console.log(`\nTesting login for user: ${username}`);
+        const response = await axios.post('http://localhost:5000/api/auth/login', {
+            username,
+            password
         });
         
-        const data = await response.json();
-        console.log('Response:', data);
+        console.log('Login successful!');
+        console.log('User details:', response.data.user);
+        return response.data;
     } catch (error) {
-        console.error('Error:', error);
+        console.log('Login failed:', error.response?.data?.message || error.message);
+        return null;
     }
 };
 
-testLogin();
+const runTests = async () => {
+    // Test teacher login
+    console.log('=== Testing Teacher Login ===');
+    await testLogin('nikhil', 'teacher123');
+
+    // Test student login
+    console.log('\n=== Testing Student Login ===');
+    await testLogin('nibba', 'student123');
+    await testLogin('Ramu', 'student123');
+};
+
+// Make sure the backend server is running first
+console.log('Starting login tests...');
+runTests();

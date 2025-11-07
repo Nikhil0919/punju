@@ -11,7 +11,10 @@ const createAdmin = async () => {
         // Check if admin already exists
         const existingAdmin = await User.findOne({ role: 'admin' });
         if (existingAdmin) {
-            console.log('Admin user already exists');
+            console.log('Updating existing admin password...');
+            existingAdmin.password = 'admin123';
+            await existingAdmin.save();
+            console.log('Admin password has been reset to: admin123');
             process.exit(0);
         }
 
