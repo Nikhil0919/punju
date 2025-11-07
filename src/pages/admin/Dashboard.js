@@ -1,6 +1,7 @@
 import React from 'react';
-import { Container, Grid, Paper, Typography } from '@mui/material';
+import { Box, Grid, Paper, Typography, Container } from '@mui/material';
 import { Link } from 'react-router-dom';
+import LeaveManagement from './LeaveManagement';
 
 const AdminDashboard = () => {
   return (
@@ -89,6 +90,11 @@ const AdminDashboard = () => {
               Create and manage class schedules
             </Typography>
           </Paper>
+        </Grid>
+
+        {/* Leave Management Section */}
+        <Grid item xs={12}>
+          <LeaveManagement />
         </Grid>
       </Grid>
     </Container>

@@ -14,6 +14,7 @@ import {
   Divider
 } from '@mui/material';
 import HolidayCalendar from '../../components/HolidayCalendar';
+import LeaveApplication from '../../components/LeaveApplication';
 import axios from 'axios';
 
 const StudentDashboard = () => {
@@ -113,6 +114,11 @@ const StudentDashboard = () => {
               </Table>
             </TableContainer>
           </Paper>
+        </Grid>
+
+        {/* Leave Application */}
+        <Grid item xs={12}>
+          <LeaveApplication />
         </Grid>
 
         {/* Holiday Calendar */}
