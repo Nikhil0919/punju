@@ -106,14 +106,37 @@ const LeaveManagement = () => {
   };
 
   return (
-    <Box sx={{ p: 3 }}>
+    <Box sx={{ p: 3, backgroundColor: 'background.default', minHeight: '100vh' }}>
       {alertInfo.show && (
-        <Alert severity={alertInfo.severity} sx={{ mb: 2 }}>
+        <Alert 
+          severity={alertInfo.severity} 
+          sx={{ 
+            mb: 2,
+            borderRadius: 2,
+            '& .MuiAlert-icon': {
+              fontSize: '1.5rem'
+            }
+          }}
+        >
           {alertInfo.message}
         </Alert>
       )}
-      <Paper sx={{ p: 2 }}>
-        <Typography variant="h6" gutterBottom>
+      <Paper 
+        sx={{ 
+          p: 3,
+          backdropFilter: 'blur(10px)',
+          backgroundColor: 'background.paper',
+        }}
+      >
+        <Typography 
+          variant="h5" 
+          gutterBottom 
+          sx={{ 
+            mb: 3,
+            fontWeight: 600,
+            color: 'primary.main',
+          }}
+        >
           Leave Applications
         </Typography>
         <TableContainer>
@@ -131,13 +154,32 @@ const LeaveManagement = () => {
             </TableHead>
             <TableBody>
               {leaves.map((leave) => (
-                <TableRow key={leave._id}>
-                  <TableCell>{leave.student.fullName}</TableCell>
+                <TableRow 
+                  key={leave._id}
+                  sx={{
+                    '&:hover': {
+                      backgroundColor: 'rgba(25, 118, 210, 0.04)',
+                    },
+                    transition: 'background-color 0.2s ease',
+                  }}
+                >
+                  <TableCell sx={{ fontWeight: 500 }}>{leave.student.fullName}</TableCell>
                   <TableCell>{leave.reason}</TableCell>
                   <TableCell>{format(new Date(leave.fromDate), 'dd/MM/yyyy')}</TableCell>
                   <TableCell>{format(new Date(leave.toDate), 'dd/MM/yyyy')}</TableCell>
                   <TableCell>
-                    <Typography color={getStatusColor(leave.status)}>
+                    <Typography 
+                      sx={{ 
+                        py: 0.5, 
+                        px: 1.5, 
+                        borderRadius: '16px', 
+                        display: 'inline-block',
+                        fontSize: '0.875rem',
+                        backgroundColor: `${getStatusColor(leave.status)}15`,
+                        color: getStatusColor(leave.status),
+                        fontWeight: 500,
+                      }}
+                    >
                       {leave.status.toUpperCase()}
                     </Typography>
                   </TableCell>
@@ -155,6 +197,14 @@ const LeaveManagement = () => {
                               setAdminRemarks('');
                               handleUpdateStatus('approved');
                             }}
+                            sx={{
+                              minWidth: '100px',
+                              fontSize: '0.875rem',
+                              '&:hover': {
+                                transform: 'translateY(-1px)',
+                                boxShadow: '0 4px 8px rgba(46, 125, 50, 0.25)',
+                              },
+                            }}
                           >
                             Approve
                           </Button>
@@ -167,6 +217,14 @@ const LeaveManagement = () => {
                               setAdminRemarks('');
                               handleUpdateStatus('rejected');
                             }}
+                            sx={{
+                              minWidth: '100px',
+                              fontSize: '0.875rem',
+                              '&:hover': {
+                                transform: 'translateY(-1px)',
+                                boxShadow: '0 4px 8px rgba(211, 47, 47, 0.25)',
+                              },
+                            }}
                           >
                             Reject
                           </Button>
@@ -176,6 +234,13 @@ const LeaveManagement = () => {
                         variant="outlined"
                         size="small"
                         onClick={() => handleOpenDialog(leave)}
+                        sx={{
+                          minWidth: '120px',
+                          fontSize: '0.875rem',
+                          '&:hover': {
+                            backgroundColor: 'rgba(25, 118, 210, 0.04)',
+                          },
+                        }}
                       >
                         Add Remarks
                       </Button>
@@ -188,12 +253,39 @@ const LeaveManagement = () => {
         </TableContainer>
       </Paper>
 
-      <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Add Remarks</DialogTitle>
+      <Dialog 
+        open={openDialog} 
+        onClose={() => setOpenDialog(false)} 
+        maxWidth="sm" 
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.08)',
+          }
+        }}
+      >
+        <DialogTitle sx={{ 
+          pb: 1,
+          fontWeight: 600,
+          color: 'primary.main',
+        }}>
+          Add Remarks
+        </DialogTitle>
         <DialogContent>
           <Box sx={{ pt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <Typography variant="body1" gutterBottom>
-              Current Status: <strong>{selectedLeave?.status.toUpperCase()}</strong>
+            <Typography variant="body1" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              Status: <Typography component="span" sx={{ 
+                color: getStatusColor(selectedLeave?.status),
+                fontWeight: 600,
+                backgroundColor: `${getStatusColor(selectedLeave?.status)}15`,
+                px: 1.5,
+                py: 0.5,
+                borderRadius: '16px',
+                fontSize: '0.875rem',
+              }}>
+                {selectedLeave?.status.toUpperCase()}
+              </Typography>
             </Typography>
             <TextField
               label="Admin Remarks"

@@ -29,14 +29,23 @@ export const AuthProvider = ({ children }) => {
         body: JSON.stringify({ username, password }),
       });
 
-      const data = await response.json();
-
       console.log('Response status:', response.status);
       
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        console.error('Login error response:', errorData);
-        throw new Error(errorData.message || 'Login failed');
+        console.error('Login failed with status:', response.status);
+        let errorMessage = 'Login failed';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorMessage;
+        } catch (e) {
+          console.error('Failed to parse error response:', e);
+        }
+        throw new Error(errorMessage);
+      }
+
+      const data = await response.json();
+      if (!data.token || !data.user) {
+        throw new Error('Invalid response from server');
       }
 
       // Store user data and token

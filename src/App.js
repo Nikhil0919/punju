@@ -3,6 +3,9 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { ThemeProvider, CssBaseline } from '@mui/material';
+import theme from './theme';
+import Welcome from './pages/Welcome';
 import Login from './pages/Login';
 import AdminDashboard from './pages/admin/Dashboard';
 import UserManagement from './pages/admin/UserManagement';
@@ -30,9 +33,11 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
 
 function App() {
   return (
-    <BrowserRouter>
-      <AuthProvider>
-        <LocalizationProvider dateAdapter={AdapterDateFns}>
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <BrowserRouter>
+        <AuthProvider>
+          <LocalizationProvider dateAdapter={AdapterDateFns}>
           <Routes>
           <Route path="/login" element={<Login />} />
         
@@ -101,12 +106,14 @@ function App() {
           }
         />
         
-        {/* Default redirect */}
-        <Route path="/" element={<Navigate to="/login" />} />
+        {/* Welcome page */}
+        <Route path="/" element={<Welcome />} />
+        <Route path="*" element={<Navigate to="/" />} />
       </Routes>
-        </LocalizationProvider>
-      </AuthProvider>
-    </BrowserRouter>
+          </LocalizationProvider>
+        </AuthProvider>
+      </BrowserRouter>
+    </ThemeProvider>
   );
 }
 
