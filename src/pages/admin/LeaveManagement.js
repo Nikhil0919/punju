@@ -16,10 +16,10 @@ import {
   DialogActions,
   TextField,
   Alert,
-  MenuItem,
   Stack
 } from '@mui/material';
 import { format } from 'date-fns';
+import { API_ENDPOINTS } from '../../config/api';
 
 const LeaveManagement = () => {
   const [leaves, setLeaves] = useState([]);
@@ -35,9 +35,10 @@ const LeaveManagement = () => {
 
   const fetchLeaves = async () => {
     try {
-      const response = await fetch('http://localhost:5001/api/leaves/all', {
+      const response = await fetch(API_ENDPOINTS.LEAVES_ALL, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
         }
       });
       const data = await response.json();
@@ -57,7 +58,7 @@ const LeaveManagement = () => {
   const handleUpdateStatus = async (status = null) => {
     try {
       const finalStatus = status || selectedStatus;
-      const response = await fetch(`http://localhost:5001/api/leaves/${selectedLeave._id}`, {
+      const response = await fetch(API_ENDPOINTS.LEAVES_UPDATE(selectedLeave._id), {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

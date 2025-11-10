@@ -8,7 +8,7 @@ import AdminDashboard from './pages/admin/Dashboard';
 import UserManagement from './pages/admin/UserManagement';
 import SectionManagement from './pages/admin/SectionManagement';
 import TimetableManagement from './pages/admin/TimetableManagement';
-import HolidayManagement from './pages/admin/HolidayManagement';
+
 import AcademicCalendar from './pages/admin/AcademicCalendar';
 import StudentDashboard from './pages/student/Dashboard';
 import TeacherDashboard from './pages/teacher/Dashboard';

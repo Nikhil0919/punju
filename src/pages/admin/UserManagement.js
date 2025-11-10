@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Container,
   Paper,
@@ -38,18 +38,18 @@ const UserManagement = () => {
     setNewUser(prev => ({ ...prev, role: selectedRole }));
   }, [selectedRole]);
 
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     try {
       const data = await getUsersByRole(selectedRole);
       setUsers(data);
     } catch (error) {
       console.error('Error fetching users:', error);
     }
-  };
+  }, [selectedRole]);
 
   useEffect(() => {
     fetchUsers();
-  }, [selectedRole]);
+  }, [selectedRole, fetchUsers]);
 
   const handleCreateUser = async () => {
     try {

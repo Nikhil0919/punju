@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Grid, Paper, Typography, Container } from '@mui/material';
+import { Grid, Paper, Typography, Container } from '@mui/material';
 import { Link } from 'react-router-dom';
 import LeaveManagement from './LeaveManagement';
 
