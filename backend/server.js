@@ -17,7 +17,11 @@ console.log('Environment variables loaded successfully');
 const app = express();
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(express.json());
 
 // MongoDB connection
@@ -35,12 +39,20 @@ const authRoutes = require('./routes/auth');
 const timetableRoutes = require('./routes/timetable');
 const assignmentRoutes = require('./routes/assignment');
 const adminRoutes = require('./routes/admin');
+const studentRoutes = require('./routes/student');
+const teacherRoutes = require('./routes/teacher');
+const holidayRoutes = require('./routes/holiday');
+const leaveRoutes = require('./routes/leave');
 
 // Use routes
 app.use('/api/auth', authRoutes);
 app.use('/api/timetable', timetableRoutes);
 app.use('/api/assignment', assignmentRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/student', studentRoutes);
+app.use('/api/teacher', teacherRoutes);
+app.use('/api/holidays', holidayRoutes);
+app.use('/api/leaves', leaveRoutes);
 
 // Basic route
 app.get('/', (req, res) => {
@@ -53,7 +65,7 @@ app.use((err, req, res, next) => {
   res.status(500).send('Something broke!');
 });
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);

@@ -7,23 +7,33 @@ const { authenticateToken } = require('../middleware/auth');
 router.post('/login', async (req, res) => {
   try {
     console.log('Login attempt received:', req.body);
+    console.log('Headers:', req.headers);
+    
     const { username, password } = req.body;
 
     // Validate input
     if (!username || !password) {
+      console.log('Missing username or password');
       return res.status(400).json({ message: 'Username and password are required' });
     }
 
     // Find user - case insensitive username search
-    const user = await User.findOne({
-      username: { $regex: new RegExp(`^${username}$`, 'i') }
-    });
+    let user;
+    try {
+      user = await User.findOne({
+        username: { $regex: new RegExp(`^${username}$`, 'i') }
+      });
+    } catch (err) {
+      console.error('Database error when finding user:', err);
+      return res.status(500).json({ message: 'Server error while finding user' });
+    }
     
     console.log('Login attempt details:', {
       attemptedUsername: username,
       userFound: user ? 'yes' : 'no',
       userRole: user?.role,
-      userId: user?._id
+      userId: user?._id,
+      hashedPassword: user?.password ? 'exists' : 'missing'
     });
     
     if (!user) {
@@ -32,10 +42,15 @@ router.post('/login', async (req, res) => {
     }
 
     // Check password
-    console.log('Checking password...');
-    const isMatch = await user.comparePassword(password);
-    console.log('Password match:', isMatch ? 'yes' : 'no');
-    console.log('Attempted password:', password);
+    let isMatch = false;
+    try {
+      console.log('Checking password...');
+      isMatch = await user.comparePassword(password);
+      console.log('Password comparison result:', isMatch ? 'match' : 'no match');
+    } catch (err) {
+      console.error('Error comparing passwords:', err);
+      return res.status(500).json({ message: 'Server error while verifying password' });
+    }
     
     if (!isMatch) {
       console.log('Password does not match');

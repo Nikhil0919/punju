@@ -19,15 +19,29 @@ const timetableSchema = new mongoose.Schema({
     type: Number,
     required: true,
     min: 1,
-    max: 7
+    max: 5 // Monday to Friday
   },
   startTime: {
     type: String,
-    required: true
+    required: true,
+    match: /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/ // HH:mm format
   },
   endTime: {
     type: String,
-    required: true
+    required: true,
+    match: /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/ // HH:mm format
+  },
+  room: {
+    type: String,
+    required: false
+  },
+  semester: {
+    type: String,
+    required: false
+  },
+  color: {
+    type: String,
+    default: '#3788d8' // Default color for UI
   }
 });
 
