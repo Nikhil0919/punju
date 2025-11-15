@@ -1,0 +1,68 @@
+---
+# ResourceQuota for namespace
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: punju-quota
+  namespace: punju-university
+  labels:
+    app: punju
+spec:
+  hard:
+    requests.cpu: "10"
+    requests.memory: "20Gi"
+    limits.cpu: "20"
+    limits.memory: "40Gi"
+    pods: "50"
+    services: "10"
+    persistentvolumeclaims: "5"
+    pods.running: "30"
+    pods.pending: "20"
+  scopeSelector:
+    matchExpressions:
+    - operator: In
+      scopeName: PriorityClass
+      values: ["default", "important"]
+
+---
+# LimitRange for namespace
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: punju-limitrange
+  namespace: punju-university
+  labels:
+    app: punju
+spec:
+  limits:
+  - type: Pod
+    max:
+      cpu: "1"
+      memory: "1Gi"
+    min:
+      cpu: "10m"
+      memory: "32Mi"
+    default:
+      cpu: "200m"
+      memory: "256Mi"
+    defaultRequest:
+      cpu: "100m"
+      memory: "128Mi"
+  - type: Container
+    max:
+      cpu: "500m"
+      memory: "512Mi"
+    min:
+      cpu: "10m"
+      memory: "32Mi"
+    defaultRequest:
+      cpu: "100m"
+      memory: "128Mi"
+    default:
+      cpu: "200m"
+      memory: "256Mi"
+  - type: PersistentVolumeClaim
+    max:
+      storage: "10Gi"
+    min:
+      storage: "1Gi"
