@@ -4,6 +4,10 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 
 // Load environment variables
+
+const SPLUNK_HEC_URL = "https://localhost:8088/services/collector";
+const SPLUNK_HEC_TOKEN = "dd05af99-24ac-4c7e-b391-e6d7c881bf51";  // paste your token
+
 dotenv.config();
 
 // Check environment variables
